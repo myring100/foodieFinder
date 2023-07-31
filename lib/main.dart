@@ -1,11 +1,15 @@
-import 'package:eatter/screen/pizzaScreen.dart';
-import 'utilities/breadButton.dart';
+
+import 'dart:ui';
+import 'package:eatter/screen/firstPage.dart';
 import 'package:flutter/material.dart';
 import 'screen/secondPage.dart';
-import 'kConst.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
 void main() {
+  Locale currentLocale = window.locale;
+  String languageCode = currentLocale.languageCode;
+  print('사용자의 핸드폰 언어: $languageCode');
   runApp(const MyApp());
 }
 
@@ -32,8 +36,8 @@ class MyApp extends StatelessWidget {
             primary: Colors.purple, // 버튼 색상을 보라색으로 설정
           ),
         ),
-        textTheme: GoogleFonts.caveatTextTheme(Theme.of(context).textTheme), // 텍스트 폰트를 Google Caveat로 설정
-
+        textTheme: GoogleFonts.caveatTextTheme(
+            Theme.of(context).textTheme), // 텍스트 폰트를 Google Caveat로 설정
       ),
       // home: const MyHomePage(),
       home: const MyHomePage(),
@@ -48,37 +52,30 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+  final _pageController = PageController(initialPage: 0);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
+      body: PageView(
+        children: [
+          Firstpage(),
+          SecondPage(),
+        ],
 
-      body: SingleChildScrollView(
-
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              kWelcomeTitle,
-              // PizzaScreen(),
-              SizedBox(height: 20,),
-              kWelcomSubTitle,
-              SizedBox(height: 20,),
-              CloudButton(
-                onPressed: () {
-                  // 버튼 클릭 시 다음 페이지로 이동
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SecondPage()),
-                  );
-                },
-                text: 'Menu',
-              ),
-            ],
-          ),
         ),
-      ),
     );
   }
 }
