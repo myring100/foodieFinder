@@ -1,15 +1,19 @@
 
 import 'dart:ui';
+import 'package:eatter/screen/findDinning.dart';
 import 'package:eatter/screen/firstPage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get/get.dart';
 import 'screen/secondPage.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 
-void main() {
+void main() async {
   Locale currentLocale = window.locale;
   String languageCode = currentLocale.languageCode;
   print('사용자의 핸드폰 언어: $languageCode');
+  await dotenv.load();
   runApp(const MyApp());
 }
 
@@ -18,12 +22,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Eatter',
       theme: ThemeData(
         primaryColor: Colors.purple[200],
         // 연보라 파스텔톤의 primary color
-        accentColor: Colors.purpleAccent[100],
+        hintColor: Colors.purpleAccent[100],
         // 연보라 파스텔톤의 accent color
         scaffoldBackgroundColor: Colors.purple[100],
         // 연보라 파스텔톤의 scaffold background color
@@ -39,7 +43,6 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.caveatTextTheme(
             Theme.of(context).textTheme), // 텍스트 폰트를 Google Caveat로 설정
       ),
-      // home: const MyHomePage(),
       home: const MyHomePage(),
     );
   }

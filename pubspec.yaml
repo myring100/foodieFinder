@@ -30,15 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   google_fonts: ^4.0.4
-  typewritertext: ^1.8.0
   roulette: ^0.1.4
   material_dialogs: ^1.1.4
+  get: ^4.6.5
+  flutter_dotenv: ^5.1.0
+  flutter_google_places_sdk: ^0.3.2+9
+  google_maps_flutter: ^2.4.0
+  http: ^1.1.0
+  geolocator: ^10.0.0
+  permission_handler: ^10.4.3
 
 dev_dependencies:
   flutter_test:
@@ -63,8 +65,8 @@ flutter:
   uses-material-design: true
 
   assets:
-   - assets/pizza.png
-   - assets/bread.png
+   - assets/
+   - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

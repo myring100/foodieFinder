@@ -1,11 +1,14 @@
-import 'dart:io';
 import 'dart:math';
 import 'package:eatter/kConst.dart';
+import 'package:eatter/screen/findDinning.dart';
 import 'package:eatter/widget/myRoulette.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:material_dialogs/widgets/buttons/icon_button.dart';
 import 'package:roulette/roulette.dart';
 import 'package:material_dialogs/material_dialogs.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 class Firstpage extends StatefulWidget {
   const Firstpage({Key? key}) : super(key: key);
@@ -19,8 +22,9 @@ class _FirstpageState extends State<Firstpage>
   late int randomNum;
   static final _random = Random();
   late RouletteController _controller;
-
+  late Image foodImage;
   final bool _clockwise = true;
+
 
   final colors = <Color>[
     Colors.red.withAlpha(50),
@@ -60,6 +64,23 @@ class _FirstpageState extends State<Firstpage>
     "Indian",
   ];
 
+  void setImage(int i){
+
+    switch(i){
+    case 0 : foodImage = Image.asset('assets/korean.jpeg'); break;
+    case 1 : foodImage = Image.asset('assets/japanese.jpeg'); break;
+    case 2 : foodImage = Image.asset('assets/chinese.jpeg');break;
+    case 3 : foodImage = Image.asset('assets/italian.jpeg');break;
+    case 4 : foodImage = Image.asset('assets/mexican.jpeg');break;
+    case 5 : foodImage = Image.asset('assets/thai.jpeg');break;
+    case 6 : foodImage = Image.asset('assets/greek.jpeg');break;
+    case 7 : foodImage = Image.asset('assets/turkish.jpeg');break;
+    case 8 : foodImage = Image.asset('assets/french.jpeg');break;
+    case 9 : foodImage = Image.asset('assets/india.jpeg');break;
+      default : foodImage = Image.asset('assets/mexican.jpeg');break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -88,14 +109,19 @@ class _FirstpageState extends State<Firstpage>
             //stop 버튼
             ElevatedButton(
               onPressed: () {
-                _controller.rollTo(randomNum,
-                    duration: const Duration(milliseconds: 300),
-                    clockwise: _clockwise,
-                    offset: _random.nextDouble());
+                print(_controller.animation.status);
+                if (_controller.animation.status == AnimationStatus.forward) {
+                  _controller.rollTo(randomNum,
+                      duration: const Duration(milliseconds: 300),
+                      clockwise: _clockwise,
+                      offset: _random.nextDouble());
+                } else {
+                  _showSnackBar(context);
+                }
               },
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(Colors.red),
-                fixedSize: MaterialStateProperty.all(const Size(150,50)),
+                fixedSize: MaterialStateProperty.all(const Size(150, 50)),
               ),
               child: const Text(
                 "Stop",
@@ -119,16 +145,19 @@ class _FirstpageState extends State<Firstpage>
     );
     _controller = RouletteController(vsync: this, group: group);
     _controller.animation.addStatusListener((status) {
+      //status.index 3 == 스핀이 끝낫을때
       if (status.index == 3) {
         String foodType = values[randomNum];
         Future.delayed(Duration(milliseconds: 200), () {
           Dialogs.materialDialog(
-              customView: Image.asset('assets/bread.png'),
+              customView: foodImage,
               msg: foodType,
               context: context,
               actions: [
                 IconsButton(
-                  onPressed: () {},
+                  onPressed: () async{
+                    requestLocationPermission();
+                  },
                   text: 'Find Restaurant',
                   color: Colors.red,
                   textStyle: TextStyle(color: Colors.white),
@@ -160,7 +189,43 @@ class _FirstpageState extends State<Firstpage>
 
   void rollRoulette() {
     randomNum = _random.nextInt(values.length - 1);
-    _controller.rollTo(randomNum,
-        clockwise: _clockwise, offset: _random.nextDouble());
+    _controller.rollTo(
+        duration: Duration(seconds: 3),
+        randomNum,
+        clockwise: _clockwise,
+        offset: _random.nextDouble());
+    setImage(randomNum);
   }
+
+  void _showSnackBar(BuildContext context) {
+    final snackBar = SnackBar(
+        content: Text(
+      'Need to Spin Roulette',
+      textAlign: TextAlign.center,
+    ));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+  Future<void> requestLocationPermission() async {
+    print('requestLocationPermission()');
+
+    final status = await Geolocator.checkPermission();
+    print('current status = $status');
+    if (status == LocationPermission.denied || status == LocationPermission.deniedForever) {
+      final result = await Geolocator.requestPermission();
+      if (result == LocationPermission.whileInUse || result == LocationPermission.always) {
+        print('access allowed');
+        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low).then((value) => Get.to( () => FindDinning(value),transition: Transition.fade));
+      } else {
+        print('access denied');
+      }
+    } else if (status == LocationPermission.deniedForever){
+
+    }
+
+    else if (status == LocationPermission.whileInUse || status == LocationPermission.always) {
+      print('access allowed already');
+      Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low).then((value) => Get.to( () => FindDinning(value),transition: Transition.fade));
+    }
+  }
+
 }
