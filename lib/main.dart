@@ -1,6 +1,5 @@
 
 import 'dart:ui';
-import 'package:eatter/screen/findDinning.dart';
 import 'package:eatter/screen/firstPage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
