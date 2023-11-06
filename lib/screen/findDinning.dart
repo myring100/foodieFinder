@@ -8,6 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class FindDinning extends StatefulWidget {
   final Position currentPosition;
+
   FindDinning(this.currentPosition);
 
   @override
@@ -17,56 +18,108 @@ class FindDinning extends StatefulWidget {
 class _FindDinningState extends State<FindDinning> {
   late GoogleMapController _controller;
 
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     Position currntPosition = widget.currentPosition;
+    Set<Marker> markers = Set<Marker>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nearby Restaurants'),
       ),
       body: FutureBuilder<dynamic>(
         future: fetchNearbyRestaurants(currntPosition),
-        builder: (context,snapshot){
-          if (snapshot.connectionState==ConnectionState.waiting){
-            return CircularProgressIndicator();
-          }
-          else if (snapshot.hasError){
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {}
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
             print('snapshot has error');
-            return Center(child: Text('Data Error'),);
-          }
-          else {
+            return const Center(
+              child: Text('Data Error'),
+            );
+          } else {
             List data = snapshot.data ?? [];
             print('here i have snapshot data \n $data');
+            data.forEach((a) {
+              double lat = a["geometry"]["location"]["lat"];
+              double lng = a["geometry"]["location"]["lng"];
+              String name = a["name"];
+              markers.add(Marker(
+                markerId: MarkerId("test"),
+                position: LatLng(lat, lng),
+                infoWindow: InfoWindow(title: name),
+              ));
+            });
+            return Column(
+              children: [
+                Container(
+                  height: 250,
+                  child: GoogleMap(
+                    onMapCreated: (GoogleMapController controller) {
+                      _controller = controller;
+                    },
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(
+                          currntPosition.latitude, currntPosition.longitude),
+                      zoom: 12,
+                    ),
+                    markers: markers,
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: (data.length),
+                    itemBuilder: (context, index) {
+                      double lat = data[index]["geometry"]["location"]["lat"];
+                      double lng = data[index]["geometry"]["location"]["lng"];
+                      String name = data[index]["name"];
 
-            return ListView.builder(
-                itemCount: (data.length),
-                itemBuilder: (context,index){
-                  return ListTile(
-                    title: Text(data[index]["name"]),
-                  );
-                });
+                      return GestureDetector(
+                        onTap: () {
+                          print('here i clicked');
+                        },
+                        child: ListTile(
+                          title: Text(name),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
           }
         },
-
       ),
     );
   }
 
+  void update() {}
 }
-Future<dynamic> fetchNearbyRestaurants(Position userLocation) async {
 
+Future<dynamic> fetchNearbyRestaurants(Position userLocation) async {
   final apiKey = dotenv.env['place_api_key'];
   const radius = 5000; // 검색 반경 (미터)
   const type = 'japanese restaurant'; // 검색할 장소 유형
 
   final response = await http.get(Uri.parse(
     'https://maps.googleapis.com/maps/api/place/nearbysearch/json?'
-        'keyword=cruise&'
-        'location=${userLocation.latitude},${userLocation.longitude}'
-        '&radius=$radius'
-        '&type=$type'
-        '&key=$apiKey',
+    'keyword=cruise&'
+    'location=${userLocation.latitude},${userLocation.longitude}'
+    '&radius=$radius'
+    '&type=$type'
+    '&key=$apiKey',
   ));
 
   if (response.statusCode == 200) {
@@ -83,6 +136,3 @@ Future<dynamic> fetchNearbyRestaurants(Position userLocation) async {
     throw Exception('Failed to load nearby restaurants');
   }
 }
-
-
-
