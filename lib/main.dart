@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            primary: Colors.purple, // 버튼 색상을 보라색으로 설정
+            backgroundColor: Colors.purple, // 버튼 색상을 보라색으로 설정
           ),
         ),
         textTheme: GoogleFonts.caveatTextTheme(
@@ -47,6 +47,10 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+
+
+
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -73,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       body: PageView(
-        children: [
+        children: const [
           Firstpage(),
           SecondPage(),
         ],

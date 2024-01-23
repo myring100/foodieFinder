@@ -4,14 +4,14 @@ class CloudTextButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
-  CloudTextButton({required this.text, required this.onPressed});
+  const CloudTextButton({super.key, required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: ClipPath(
           clipper: CloudClipper(),
           child: Container(
@@ -24,7 +24,7 @@ class CloudTextButton extends StatelessWidget {
             child: Center(
               child: Text(
                 text,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),

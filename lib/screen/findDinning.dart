@@ -9,7 +9,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class FindDinning extends StatefulWidget {
   final Position currentPosition;
 
-  FindDinning(this.currentPosition);
+  const FindDinning(this.currentPosition, {super.key});
 
   @override
   State<FindDinning> createState() => _FindDinningState();
@@ -31,7 +31,7 @@ class _FindDinningState extends State<FindDinning> {
   @override
   Widget build(BuildContext context) {
     Position currntPosition = widget.currentPosition;
-    Set<Marker> markers = Set<Marker>();
+    Set<Marker> markers = <Marker>{};
 
     return Scaffold(
       appBar: AppBar(
@@ -52,19 +52,19 @@ class _FindDinningState extends State<FindDinning> {
           } else {
             List data = snapshot.data ?? [];
             print('here i have snapshot data \n $data');
-            data.forEach((a) {
+            for (var a in data) {
               double lat = a["geometry"]["location"]["lat"];
               double lng = a["geometry"]["location"]["lng"];
               String name = a["name"];
               markers.add(Marker(
-                markerId: MarkerId("test"),
+                markerId: const MarkerId("test"),
                 position: LatLng(lat, lng),
                 infoWindow: InfoWindow(title: name),
               ));
-            });
+            }
             return Column(
               children: [
-                Container(
+                SizedBox(
                   height: 250,
                   child: GoogleMap(
                     onMapCreated: (GoogleMapController controller) {
