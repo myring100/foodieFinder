@@ -10,7 +10,8 @@ import 'package:roulette/roulette.dart';
 import 'package:material_dialogs/material_dialogs.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:xen_popup_card/xen_popup_card.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:eatter/itemByCountry.dart';
 class Firstpage extends StatefulWidget {
   const Firstpage({Key? key}) : super(key: key);
 
@@ -19,7 +20,7 @@ class Firstpage extends StatefulWidget {
 }
 
 class _FirstpageState extends State<Firstpage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
 
   final controller = GroupButtonController();
   late int randomNum;
@@ -36,8 +37,9 @@ class _FirstpageState extends State<Firstpage>
     Colors.amber.withAlpha(50),
     Colors.red.withAlpha(50),
   ];
-  String? slectedString;
-  List<String> selectedValues = [];
+
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  Future<List<String>>? selectedValues;
   final values = <String>[
     "Korean",
     "Japanese",
@@ -91,115 +93,149 @@ class _FirstpageState extends State<Firstpage>
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            kWelcomeTitle,
-            const SizedBox(
-              height: 20,
-            ),
-            //eidt button
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  shadowColor: MaterialStateProperty.all(Colors.transparent),
-                  backgroundColor:
-                      MaterialStateProperty.all(Colors.transparent),
-                ),
-                onPressed: () {
-                  showEditPopUp();
-                },
-                child: const Icon(Icons.edit),
+    return FutureBuilder<List<String>>(
+      future: selectedValues,
+      builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text(snapshot.error.toString()));
+        }
+        else {
+          int itemCount = snapshot.data?.length ?? 6;
+          List<String> items = snapshot.data ??
+              ['Korean', 'Japanese', 'Chinese', 'Italian', 'Mexican', 'hi'];
+
+          final group = RouletteGroup.uniform(
+            itemCount,
+            textBuilder: (index) => items[index],
+            colorBuilder: colors.elementAt,
+            textStyleBuilder: (index) =>
+            const TextStyle(fontSize: 20, color: Colors.black),
+          );
+          _controller = RouletteController(vsync: this, group: group);
+          _controller.animation.addStatusListener((status) {
+            //status.index 3 == 스핀이 끝낫을때
+            if (status.index == 3) {
+              String foodType = items[randomNum];
+              Future.delayed(const Duration(milliseconds: 200), () {
+                Dialogs.materialDialog(
+                    customView: foodImage,
+                    msg: foodType,
+                    context: context,
+                    actions: [
+                      IconsButton(
+                        onPressed: () async {
+                          requestLocationPermission();
+                        },
+                        text: 'Find Restaurant',
+                        color: Colors.red,
+                        textStyle: const TextStyle(color: Colors.white),
+                        iconColor: Colors.white,
+                      ),
+                      IconsButton(
+                        onPressed: () {
+                          Navigator.of(context, rootNavigator: true).pop();
+                          _controller.resetAnimation();
+                          rollRoulette(itemCount);
+                        },
+                        text: 'Spin Again',
+                        color: Colors.red,
+                        textStyle: const TextStyle(color: Colors.white),
+                        iconColor: Colors.white,
+                      ),
+                    ]);
+              });
+            }
+          });
+
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  kWelcomeTitle,
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  //eidt button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        shadowColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        backgroundColor:
+                        MaterialStateProperty.all(Colors.transparent),
+                      ),
+                      onPressed: () {
+                        showEditPopUp();
+                      },
+                      child: const Icon(Icons.edit),
+                    ),
+                  ),
+                  GestureDetector(
+                    child: MyRoulette(
+                      controller: _controller, items: items,
+                    ),
+                    onTap: () {
+                      rollRoulette(itemCount);
+                    },
+                  ),
+                  const SizedBox(
+                    height: 25,
+                  ),
+                  //stop 버튼
+                  ElevatedButton(
+                    onPressed: () {
+                      print(_controller.animation.status);
+                      if (_controller.animation.status ==
+                          AnimationStatus.forward) {
+                        _controller.rollTo(randomNum,
+                            duration: const Duration(milliseconds: 300),
+                            clockwise: _clockwise,
+                            offset: _random.nextDouble());
+                      } else {
+                        _showSnackBar(context);
+                      }
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(Colors.red),
+                      fixedSize: MaterialStateProperty.all(const Size(150, 50)),
+                    ),
+                    child: const Text(
+                      "S T O P",
+                      style: TextStyle(fontSize: 25, color: Colors.white),
+                    ),
+                  )
+                ],
               ),
             ),
-            GestureDetector(
-              child: MyRoulette(
-                controller: _controller,
-              ),
-              onTap: () {
-                randomNum = _random.nextInt(values.length - 1);
-                rollRoulette();
-              },
-            ),
-            const SizedBox(
-              height: 25,
-            ),
-            //stop 버튼
-            ElevatedButton(
-              onPressed: () {
-                print(_controller.animation.status);
-                if (_controller.animation.status == AnimationStatus.forward) {
-                  _controller.rollTo(randomNum,
-                      duration: const Duration(milliseconds: 300),
-                      clockwise: _clockwise,
-                      offset: _random.nextDouble());
-                } else {
-                  _showSnackBar(context);
-                }
-              },
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.red),
-                fixedSize: MaterialStateProperty.all(const Size(150, 50)),
-              ),
-              child: const Text(
-                "S T O P",
-                style: TextStyle(fontSize: 25, color: Colors.white),
-              ),
-            )
-          ],
-        ),
-      ),
+          );
+        }
+      },
     );
+  }
+
+  void rollRoulette(int count) {
+    randomNum = _random.nextInt(count);
+    _controller.rollTo(
+        duration: const Duration(seconds: 3),
+        randomNum,
+        clockwise: _clockwise,
+        offset: _random.nextDouble());
+    setImage(randomNum);
   }
 
   @override
   void initState() {
-    final group = RouletteGroup.uniform(
-      values.length,
-      textBuilder: (index) => values[index],
-      colorBuilder: colors.elementAt,
-      textStyleBuilder: (index) =>
-          const TextStyle(fontSize: 20, color: Colors.black),
-    );
-    _controller = RouletteController(vsync: this, group: group);
-    _controller.animation.addStatusListener((status) {
-      //status.index 3 == 스핀이 끝낫을때
-      if (status.index == 3) {
-        String foodType = values[randomNum];
-        Future.delayed(const Duration(milliseconds: 200), () {
-          Dialogs.materialDialog(
-              customView: foodImage,
-              msg: foodType,
-              context: context,
-              actions: [
-                IconsButton(
-                  onPressed: () async {
-                    requestLocationPermission();
-                  },
-                  text: 'Find Restaurant',
-                  color: Colors.red,
-                  textStyle: const TextStyle(color: Colors.white),
-                  iconColor: Colors.white,
-                ),
-                IconsButton(
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    _controller.resetAnimation();
-                    rollRoulette();
-                  },
-                  text: 'Spin Again',
-                  color: Colors.red,
-                  textStyle: const TextStyle(color: Colors.white),
-                  iconColor: Colors.white,
-                ),
-              ]);
-        });
-      }
-    });
+    // selectedValues = _prefs.then((SharedPreferences prefs) {
+    //   prefs.setStringList('item', ['Korean','Japanese','Chinese','Italian','Mexican','Tahi']);
+    //   return prefs.getStringList('item') ?? [];
+    // });
     super.initState();
   }
 
@@ -209,22 +245,12 @@ class _FirstpageState extends State<Firstpage>
     super.dispose();
   }
 
-  void rollRoulette() {
-    randomNum = _random.nextInt(values.length - 1);
-    _controller.rollTo(
-        duration: const Duration(seconds: 3),
-        randomNum,
-        clockwise: _clockwise,
-        offset: _random.nextDouble());
-    setImage(randomNum);
-  }
-
   void _showSnackBar(BuildContext context) {
     const snackBar = SnackBar(
         content: Text(
-      'Need to Spin Roulette',
-      textAlign: TextAlign.center,
-    ));
+          'Need to Spin Roulette',
+          textAlign: TextAlign.center,
+        ));
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
@@ -241,44 +267,84 @@ class _FirstpageState extends State<Firstpage>
         print('access allowed');
         Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low)
             .then((value) =>
-                Get.to(() => FindDinning(value), transition: Transition.fade));
+            Get.to(() => FindDinning(value), transition: Transition.fade));
       } else {
         print('access denied');
       }
-    } else if (status == LocationPermission.deniedForever) {
-    } else if (status == LocationPermission.whileInUse ||
+    } else if (status == LocationPermission.deniedForever) {} else
+    if (status == LocationPermission.whileInUse ||
         status == LocationPermission.always) {
       print('access allowed already');
       Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low).then(
-          (value) =>
+              (value) =>
               Get.to(() => FindDinning(value), transition: Transition.fade));
     }
   }
 
-  showEditPopUp() {
-    XenCardGutter gutter = XenCardGutter(
+
+  void showEditPopUp() {
+    final controller = GroupButtonController();
+    List<String> values =[];
+    XenCardGutter gutter =  XenCardGutter(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton( onPressed: () {  }, child: const Text('Done'),),
+        padding: const EdgeInsets.fromLTRB(30,10,30,10),
+        child: ElevatedButton(style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Colors.purple[200])),onPressed: () {}, child: const Text('Done',style: TextStyle(color: Colors.black),),),
       ),
     );
     showDialog(
         context: context,
-        builder: (builder) => XenPopupCard(
-        gutter: gutter,
-          body: Column(
-            children: [
-              GroupButton.checkbox(
-                controller: controller,
-                buttons: ['12:00', '13:00', '14:00'],
-                onSelected: (i, selected) => debugPrint('Button #$i $selected'),
+        builder: (builder) =>
+            XenPopupCard(
+              gutter: gutter,
+              body: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  GroupButton(
+                    isRadio: false,
+                    onSelected: (text,i,selected){
+                      if(selected) {
+                        values.add(text);
+                      } else {
+                        values.remove(text);
+                      }
+                    },
+
+                      options: GroupButtonOptions(
+                        selectedTextStyle: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black,
+                        ),
+                        selectedColor: Colors.purple[500],
+                        unselectedColor: Colors.purple[200],
+                        unselectedTextStyle: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.black,
+                        ),
+                        borderRadius: BorderRadius.circular(50),
+                        spacing: 10,
+                        runSpacing: 10,
+                        groupingType: GroupingType.wrap,
+                        direction: Axis.horizontal,
+                        buttonHeight: 60,
+                        buttonWidth: 60,
+                        mainGroupAlignment: MainGroupAlignment.center,
+                        crossGroupAlignment: CrossGroupAlignment.center,
+                        groupRunAlignment: GroupRunAlignment.center,
+                        textAlign: TextAlign.center,
+                        textPadding: EdgeInsets.zero,
+                        alignment: Alignment.center,
+                        elevation: 0,
+                      ),
+                      maxSelected: 5,
+                      controller:controller,
+                      buttons: ItembyCountry().items),
+                  TextButton(
+                    onPressed: () => controller.selectIndex(1),
+                    child: const Text('Select 3 - 6 buttons'),
+                  )
+                ],
               ),
-              TextButton(
-                onPressed: () => controller.selectIndex(1),
-                child: const Text('Select 1 button'),
-              )
-            ],
-          ),,
-        ));
+            ));
   }
 }

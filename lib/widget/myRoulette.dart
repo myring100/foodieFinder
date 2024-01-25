@@ -5,10 +5,11 @@ import 'arrow.dart';
 class MyRoulette extends StatelessWidget {
   const MyRoulette({
     Key? key,
-    required this.controller,
+    required this.controller, required this.items,
   }) : super(key: key);
 
   final RouletteController controller;
+  final List<String> items;
 
   @override
   Widget build(BuildContext context) {
